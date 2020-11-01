@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /categories/
+Allow: /tags/
+Allow: /archives/
+Allow: /about/
+Disallow: /js/
+Disallow: /css/
+Disallow: /images/
+Disallow: /fonts/
+Disallow: /vendors/
+Disallow: /fancybox/
+
+Sitemap: http://l1b0k.github.io/sitemap.xml
+Sitemap: http://l1b0k.github.io/baidusitemap.xml

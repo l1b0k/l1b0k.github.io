@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"l1b0k.github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Linux cgroup 全文基于 CentOS 7.4  cgroup 是 Linux kernel 的一项功能，用来做资源限制的systemd 是管理进程的cgroup 层级系统+ systemd 可以把资源管理设置从进程级别移至应用程序级别 本文首先将介绍如何在systemd 中对应用做资源限制然后介绍如何手动配置 cgroup">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux cgroup">
+<meta property="og:url" content="http://l1b0k.github.com/posts/85b55b6f.html">
+<meta property="og:site_name" content="l1b0k">
+<meta property="og:description" content="Linux cgroup 全文基于 CentOS 7.4  cgroup 是 Linux kernel 的一项功能，用来做资源限制的systemd 是管理进程的cgroup 层级系统+ systemd 可以把资源管理设置从进程级别移至应用程序级别 本文首先将介绍如何在systemd 中对应用做资源限制然后介绍如何手动配置 cgroup">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-06-06T15:09:57.000Z">
+<meta property="article:modified_time" content="2020-11-01T02:30:11.010Z">
+<meta property="article:author" content="l1b0k">
+<meta property="article:tag" content="linux">
+<meta property="article:tag" content="cgroup">
+<meta property="article:tag" content="docker">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://l1b0k.github.com/posts/85b55b6f.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Linux cgroup | l1b0k</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-116455624-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-116455624-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="l1b0k" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">l1b0k</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://l1b0k.github.com/posts/85b55b6f.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="l1b0k">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="l1b0k">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Linux cgroup
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-06-06 23:09:57" itemprop="dateCreated datePublished" datetime="2018-06-06T23:09:57+08:00">2018-06-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-11-01 10:30:11" itemprop="dateModified" datetime="2020-11-01T10:30:11+08:00">2020-11-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Linux-cgroup"><a href="#Linux-cgroup" class="headerlink" title="Linux cgroup"></a>Linux cgroup</h1><blockquote>
+<p>全文基于 CentOS 7.4</p>
+</blockquote>
+<p>cgroup 是 Linux kernel 的一项功能，用来做资源限制的<br>systemd 是管理进程的<br>cgroup 层级系统+ systemd 可以把资源管理设置从<strong>进程级别移至应用程序级别</strong></p>
+<p>本文首先将介绍如何在systemd 中对应用做资源限制<br>然后介绍如何手动配置 cgroup</p>
+<a id="more"></a>
+
+<h1 id="systemd-中-cgroup-的默认层级"><a href="#systemd-中-cgroup-的默认层级" class="headerlink" title="systemd 中 cgroup 的默认层级"></a>systemd 中 cgroup 的默认层级</h1><p>默认情况下，systemd 会在cgroup下自动创建 slice、scope 和 service 单位的层级</p>
+<ul>
+<li>name.service<br>一个或一组进程</li>
+<li>name.scope<br>一组外部创建的进程</li>
+<li>parent-name.slice<br>一组按层级排列的单位。slice 并不包含进程<br>子层标识父的名称</li>
+</ul>
+<p>使用 <code>systemd-cgls</code> 可以查看</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">├─1 /usr/lib/systemd/systemd --switched-root --system --deserialize 21</span><br><span class="line">├─docker</span><br><span class="line">│ └─60684a93a27ee26bcc5dd062bb2d453ee9a409d665e01577f0061a0fe2cfd40a</span><br><span class="line">│   └─2922 mysqld</span><br><span class="line">├─user.slice</span><br><span class="line">│ └─user-0.slice</span><br><span class="line">│   └─session-79.scope</span><br><span class="line">│     ├─4527 sshd: root@pts/0    </span><br><span class="line">│     ├─4529 -bash</span><br><span class="line">│     ├─4584 systemd-cgls</span><br><span class="line">│     └─4585 less</span><br><span class="line">└─system.slice</span><br><span class="line">  ├─docker.service</span><br><span class="line">  │ ├─2671 /usr/bin/dockerd</span><br><span class="line">  │ ├─2683 docker-containerd -l unix:///var/run/docker/libcontainerd/docker-containerd.sock --metrics-interval=0 --start-timeout 2m --state-dir /var/run/docker/libcontainerd/containerd --sh</span><br><span class="line">  │ ├─2898 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3306 -container-ip 172.20.0.2 -container-port 3306</span><br><span class="line">  │ └─2905 docker-containerd-shim 60684a93a27ee26bcc5dd062bb2d453ee9a409d665e01577f0061a0fe2cfd40a /var/run/docker/libcontainerd/60684a93a27ee26bcc5dd062bb2d453ee9a409d665e01577f0061a0fe2cf</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>slice 是个逻辑分组，service、scope才是进程运行的地方</p>
+</blockquote>
+<h1 id="在systemd-中使用-cgroup"><a href="#在systemd-中使用-cgroup" class="headerlink" title="在systemd 中使用 cgroup"></a>在systemd 中使用 cgroup</h1><p>首先systemd 启动进程分为临时、永久两种方式</p>
+<p>临时：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemd-run --unit=name --scope --slice=slice_name <span class="built_in">command</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="使用systemd-管理进程"><a href="#使用systemd-管理进程" class="headerlink" title="使用systemd 管理进程"></a>使用systemd 管理进程</h2><p>创建一个测试例子，来验证cgroup 对cpu的限制</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tee /usr/lib/systemd/system/test.service&lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">[Service]</span></span><br><span class="line"><span class="string">ExecStart=/usr/bin/stress --cpu 10</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart <span class="built_in">test</span></span><br></pre></td></tr></table></figure>
+
+<p>这样启动后通过<code>top</code>可观察到cpu占用为100%</p>
+<h2 id="设置资源限制"><a href="#设置资源限制" class="headerlink" title="设置资源限制"></a>设置资源限制</h2><p>使用命令去修改 cgroup</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl set-property --runtime <span class="built_in">test</span> CPUQuota=10%</span><br></pre></td></tr></table></figure>
+
+<p>如果不添加 <code>runtime</code> 参数，这个资源限制会被持久化到文件</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]<span class="comment"># cat /etc/systemd/system/test.service.d/50-CPUQuota.conf </span></span><br><span class="line">[Service]</span><br><span class="line">CPUQuota=10%</span><br></pre></td></tr></table></figure>
+
+<p>这时候可直接观察到cpu占用降低到10%</p>
+<p>这里列下常用配置</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[Service]</span><br><span class="line"><span class="comment"># 默认 1024 代表 1core  相对使用率</span></span><br><span class="line">CPUShares=1500</span><br><span class="line"><span class="comment"># 占用比例 按单核算</span></span><br><span class="line">CPUQuota=110%</span><br><span class="line"></span><br><span class="line"><span class="comment"># 最大可用内存  单位（K、M、G、T ）</span></span><br><span class="line">MemoryLimit=1G</span><br></pre></td></tr></table></figure>
+
+
+
+<p>更多详细配置参考<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/resource_management_guide/sec-Modifying_Control_Groups#sec-Modifying_Unit_Files">修改 CGROUP</a></p>
+<blockquote>
+<p>cgroup = v1</p>
+</blockquote>
+<h1 id="cgroup-的手动配置"><a href="#cgroup-的手动配置" class="headerlink" title="cgroup 的手动配置"></a>cgroup 的手动配置</h1><p>内核使用文件系统来配置cgroup</p>
+<h2 id="hierarchy-层级"><a href="#hierarchy-层级" class="headerlink" title="hierarchy(层级)"></a>hierarchy(层级)</h2><p>通过虚拟的文件系统，维护了一个树<br>描述了<code>cgroup</code>之间的从属关系，这种结构意味着配置是可以继承的<br>通过写入树下的文件，对<code>cgroup</code>配置进行修改</p>
+<blockquote>
+<p>这里只展示创建 cgroup 的层级关系，把进程添加到里面去（不包含资源限制）</p>
+</blockquote>
+<h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建目录，并且挂载为 cgroup 类型</span></span><br><span class="line">mkdir cgroup-test</span><br><span class="line">mount -t cgroup -o none,name=cgroup-test cgroup-test ./cgroup-test</span><br><span class="line"></span><br><span class="line"><span class="comment"># 挂载后可以看到里面创建的文件</span></span><br><span class="line">[root@localhost ~]<span class="comment"># ls -1 ./cgroup-test/</span></span><br><span class="line">cgroup.clone_children   <span class="comment"># 默认0，如果1，那么子cgroup会继承父的配置</span></span><br><span class="line">cgroup.event_control    <span class="comment"># </span></span><br><span class="line">cgroup.procs            <span class="comment"># 包含系统里所有进程</span></span><br><span class="line">cgroup.sane_behavior</span><br><span class="line">notify_on_release</span><br><span class="line">release_agent</span><br><span class="line">tasks                   <span class="comment"># 当前 cgroup 下进程</span></span><br></pre></td></tr></table></figure>
+
+<p>注意到 <code>-o none</code> 意味着这个挂载后目录是虚拟的</p>
+<h3 id="创建子cgroup"><a href="#创建子cgroup" class="headerlink" title="创建子cgroup"></a>创建子cgroup</h3><p>只需要在<code>cgroup-test</code>中 创建目录</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost cgroup-test]<span class="comment"># mkdir cgroup-1</span></span><br><span class="line">[root@localhost cgroup-test]<span class="comment"># mkdir cgroup-2</span></span><br><span class="line">[root@localhost cgroup-test]<span class="comment"># tree</span></span><br><span class="line">.</span><br><span class="line">├── cgroup-1</span><br><span class="line">│   ├── cgroup.clone_children</span><br><span class="line">│   ├── cgroup.event_control</span><br><span class="line">│   ├── cgroup.procs</span><br><span class="line">│   ├── notify_on_release</span><br><span class="line">│   └── tasks</span><br><span class="line">├── cgroup-2</span><br><span class="line">│   ├── cgroup.clone_children</span><br><span class="line">│   ├── cgroup.event_control</span><br><span class="line">│   ├── cgroup.procs</span><br><span class="line">│   ├── notify_on_release</span><br><span class="line">│   └── tasks</span><br><span class="line">├── cgroup.clone_children</span><br><span class="line">├── cgroup.event_control</span><br><span class="line">├── cgroup.procs</span><br><span class="line">├── cgroup.sane_behavior</span><br><span class="line">├── notify_on_release</span><br><span class="line">├── release_agent</span><br><span class="line">└── tasks</span><br><span class="line"></span><br><span class="line">2 directories, 17 files</span><br></pre></td></tr></table></figure>
+
+<h3 id="cgroup中添加进程"><a href="#cgroup中添加进程" class="headerlink" title="cgroup中添加进程"></a>cgroup中添加进程</h3><p>系统所有进程都默认挂在根节点上<br>添加进程通过向 <code>tasks</code> 写入<code>PID</code></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> $$ &gt;&gt; cgroup-1/tasks</span><br></pre></td></tr></table></figure>
+<p>这样就可以加入到 <code>cgroup-1</code>中</p>
+<blockquote>
+<p>一个进程可以加入到多个<code>hierarchy</code>中</p>
+</blockquote>
+<p>之前提到<code>systemd</code> 维护的层，在文件系统里<code>/sys/fs/cgroup</code>  下面<br>像<code>/sys/fs/cgroup/systemd</code>、<code>/sys/fs/cgroup/cpu</code> 这些目录都是cgroup的层级</p>
+<h2 id="subsystem"><a href="#subsystem" class="headerlink" title="subsystem"></a>subsystem</h2><p>资源控制的模块，每个模块下会有一个cgroup的hierarchy<br>通过在不同的hierarchy中对文件进行配置达到资源限制的效果</p>
+<h3 id="查看系统支持的模块"><a href="#查看系统支持的模块" class="headerlink" title="查看系统支持的模块"></a>查看系统支持的模块</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">yum install -y libcgroup-tools</span><br><span class="line"></span><br><span class="line">[root@localhost ~]<span class="comment"># lssubsys -a</span></span><br><span class="line">cpuset</span><br><span class="line">cpu,cpuacct</span><br><span class="line">memory</span><br><span class="line">devices</span><br><span class="line">freezer</span><br><span class="line">net_cls,net_prio</span><br><span class="line">blkio</span><br><span class="line">perf_event</span><br><span class="line">hugetlb</span><br><span class="line">pids</span><br></pre></td></tr></table></figure>
+
+<p>这些模块会对指定的资源做限制，配置路径在<code>/sys/fs/cgroup/&lt;cpu&gt;</code></p>
+<h3 id="资源限制"><a href="#资源限制" class="headerlink" title="资源限制"></a>资源限制</h3><p>之前在<code>systemd</code>里面对CPU做了限制，那么再去看下真正生效的地方<br>那么查看文件路径可以通过<code>systemd-cgls</code>找到</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">└─system.slice</span><br><span class="line">  ├─test.service</span><br><span class="line">  │ ├─6094 /usr/bin/stress --cpu 10</span><br><span class="line">  │ └─6095 /usr/bin/stress --cpu 10</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在 <code>/sys/fs/cgroup/cpu/system.slice/test.service/</code> 下</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cat tasks </span></span><br><span class="line">6094</span><br><span class="line">6095</span><br><span class="line"><span class="comment"># 可以看到两个进程确实加入到这个cgroup中</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cat cpu.cfs_period_us</span></span><br><span class="line">100000</span><br><span class="line"><span class="comment"># cat cpu.cfs_quota_us</span></span><br><span class="line">10000</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>cpu.cfs_period_us: 指cgroup对资源调度周期 （微秒）<br>cpu.cfs_quota_us： 在一个周期（cpu.cfs_period_us定义），可以占用cpu的时间<br>一个周期内能占用多少cpu = cpu.cfs_quota_us / cpu.cfs_period_us<br>也就是设置的10%</p>
+<p>然后设置个内存限制看看<br><code>systemctl set-property --runtime test MemoryLimit=128M</code><br>就可以在下面路径看到</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/fs/cgroup/memory/system.slice/test.service/memory.limit_in_bytes </span><br><span class="line">134217728</span><br></pre></td></tr></table></figure>
+
+
+<p>systemd 里面参数和内核中配置对应关系</p>
+<table>
+<thead>
+<tr>
+<th>systemd option</th>
+<th>cgroup</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CPUShares</td>
+<td>cpu.shares</td>
+</tr>
+<tr>
+<td>CPUQuota</td>
+<td>cpu.cfs_quota_us</td>
+</tr>
+<tr>
+<td>MemoryLimit</td>
+<td>memory.limit_in_bytes</td>
+</tr>
+</tbody></table>
+<h1 id="Docker"><a href="#Docker" class="headerlink" title="Docker"></a>Docker</h1><p>docker 会给每个容器创建 cgroup，以<code>cpu</code>为例就是在<br><code>/sys/fs/cgroup/cpu/docker/</code></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/resource_management_guide/">资源管理指南</a><br><a target="_blank" rel="noopener" href="https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt">CPU调度参数</a></p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>l1b0k
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://l1b0k.github.com/posts/85b55b6f.html" title="Linux cgroup">http://l1b0k.github.com/posts/85b55b6f.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/linux/" rel="tag"># linux</a>
+              <a href="/tags/cgroup/" rel="tag"># cgroup</a>
+              <a href="/tags/docker/" rel="tag"># docker</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/706085c3.html" rel="prev" title="Linux 网络虚拟化">
+      <i class="fa fa-chevron-left"></i> Linux 网络虚拟化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/8b55cd7.html" rel="next" title="浙江电信 IPTV 单线复用">
+      浙江电信 IPTV 单线复用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux-cgroup"><span class="nav-number">1.</span> <span class="nav-text">Linux cgroup</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#systemd-%E4%B8%AD-cgroup-%E7%9A%84%E9%BB%98%E8%AE%A4%E5%B1%82%E7%BA%A7"><span class="nav-number">2.</span> <span class="nav-text">systemd 中 cgroup 的默认层级</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%A8systemd-%E4%B8%AD%E4%BD%BF%E7%94%A8-cgroup"><span class="nav-number">3.</span> <span class="nav-text">在systemd 中使用 cgroup</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8systemd-%E7%AE%A1%E7%90%86%E8%BF%9B%E7%A8%8B"><span class="nav-number">3.1.</span> <span class="nav-text">使用systemd 管理进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E8%B5%84%E6%BA%90%E9%99%90%E5%88%B6"><span class="nav-number">3.2.</span> <span class="nav-text">设置资源限制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#cgroup-%E7%9A%84%E6%89%8B%E5%8A%A8%E9%85%8D%E7%BD%AE"><span class="nav-number">4.</span> <span class="nav-text">cgroup 的手动配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#hierarchy-%E5%B1%82%E7%BA%A7"><span class="nav-number">4.1.</span> <span class="nav-text">hierarchy(层级)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA"><span class="nav-number">4.1.1.</span> <span class="nav-text">创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%AD%90cgroup"><span class="nav-number">4.1.2.</span> <span class="nav-text">创建子cgroup</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cgroup%E4%B8%AD%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%A8%8B"><span class="nav-number">4.1.3.</span> <span class="nav-text">cgroup中添加进程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#subsystem"><span class="nav-number">4.2.</span> <span class="nav-text">subsystem</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E7%B3%BB%E7%BB%9F%E6%94%AF%E6%8C%81%E7%9A%84%E6%A8%A1%E5%9D%97"><span class="nav-number">4.2.1.</span> <span class="nav-text">查看系统支持的模块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B5%84%E6%BA%90%E9%99%90%E5%88%B6"><span class="nav-number">4.2.2.</span> <span class="nav-text">资源限制</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Docker"><span class="nav-number">5.</span> <span class="nav-text">Docker</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">l1b0k</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/l1b0k" title="GitHub → https://github.com/l1b0k" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">l1b0k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">41k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">37 分钟</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '89bfcf7ea71beb26b29a',
+      clientSecret: 'f4fdb5abb09e5f35e04ea6d258f3d70b5c2268c7',
+      repo        : 'l1b0k.github.io',
+      owner       : 'l1b0k',
+      admin       : ['l1b0k'],
+      id          : '05cfe67d44eb3f561b84634f303e4ecf',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

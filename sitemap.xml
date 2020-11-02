@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://l1b0k.github.com/posts/775fdec0.html</loc>
+    
+    <lastmod>2020-11-02</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://l1b0k.github.com/posts/8b55cd7.html</loc>
     
     <lastmod>2020-11-01</lastmod>
@@ -16,14 +23,14 @@
   </url>
   
   <url>
-    <loc>http://l1b0k.github.com/categories/index.html</loc>
+    <loc>http://l1b0k.github.com/about/index.html</loc>
     
     <lastmod>2020-11-01</lastmod>
     
   </url>
   
   <url>
-    <loc>http://l1b0k.github.com/about/index.html</loc>
+    <loc>http://l1b0k.github.com/categories/index.html</loc>
     
     <lastmod>2020-11-01</lastmod>
     
@@ -44,13 +51,6 @@
   </url>
   
   <url>
-    <loc>http://l1b0k.github.com/posts/e32fa4d.html</loc>
-    
-    <lastmod>2020-11-01</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://l1b0k.github.com/posts/706085c3.html</loc>
     
     <lastmod>2020-11-01</lastmod>
@@ -65,6 +65,13 @@
   </url>
   
   <url>
+    <loc>http://l1b0k.github.com/posts/e32fa4d.html</loc>
+    
+    <lastmod>2020-11-01</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://l1b0k.github.com/posts/b79dc209.html</loc>
     
     <lastmod>2020-11-01</lastmod>
@@ -73,13 +80,6 @@
   
   <url>
     <loc>http://l1b0k.github.com/posts/dc0f73fa.html</loc>
-    
-    <lastmod>2020-11-01</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://l1b0k.github.com/posts/644beb87.html</loc>
     
     <lastmod>2020-11-01</lastmod>
     
@@ -101,6 +101,13 @@
   
   <url>
     <loc>http://l1b0k.github.com/posts/a4d4b8b8.html</loc>
+    
+    <lastmod>2020-11-01</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://l1b0k.github.com/posts/644beb87.html</loc>
     
     <lastmod>2020-11-01</lastmod>
     
@@ -137,7 +144,7 @@
 
   <url>
     <loc>http://l1b0k.github.com/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -145,161 +152,161 @@
   
   <url>
     <loc>http://l1b0k.github.com/tags/linux/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/cgroup/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/docker/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/centos/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/gpu/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/nvidia/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/net/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/virt/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/k8s/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/kubernetes/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/sr-iov/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/cert/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/git/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/excel/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/python/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/homebrew/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/mac/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/tensorflow/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/tf/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/golang/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/iptv/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/nfs/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/tags/iscsi/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
@@ -308,28 +315,28 @@
   
   <url>
     <loc>http://l1b0k.github.com/categories/linux/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/categories/kubernetes/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/categories/cheatbook/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://l1b0k.github.com/categories/home-network/</loc>
-    <lastmod>2020-11-01</lastmod>
+    <lastmod>2020-11-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>

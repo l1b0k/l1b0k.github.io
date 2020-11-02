@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"l1b0k.github.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="背景接上文 浙江电信 IPTV 单线复用 为啥我又开始折腾这个。。。主要看到大佬（土豪)分享的 ubnt 全家桶方案，其中 SSID 绑定 VLAN 这个可以显著提高安全性。出于设备利旧(穷)的考虑，得折腾下RT_AC86U。。。不搞懂原理是配不出来的。。。 AC86U 用的博通方案，配置各种水土不服。从之前图形配置还是很难理解这个网络怎么打通的。参考大佬资料，固件里面也没有 robocfg 命令">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浙江电信 IPTV 单线复用之后台配置分析">
+<meta property="og:url" content="http://l1b0k.github.com/posts/775fdec0.html">
+<meta property="og:site_name" content="l1b0k">
+<meta property="og:description" content="背景接上文 浙江电信 IPTV 单线复用 为啥我又开始折腾这个。。。主要看到大佬（土豪)分享的 ubnt 全家桶方案，其中 SSID 绑定 VLAN 这个可以显著提高安全性。出于设备利旧(穷)的考虑，得折腾下RT_AC86U。。。不搞懂原理是配不出来的。。。 AC86U 用的博通方案，配置各种水土不服。从之前图形配置还是很难理解这个网络怎么打通的。参考大佬资料，固件里面也没有 robocfg 命令">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://l1b0k.github.com/posts/775fdec0/topology.jpg">
+<meta property="og:image" content="http://l1b0k.github.com/posts/775fdec0/pppoe.jpg">
+<meta property="og:image" content="http://l1b0k.github.com/posts/775fdec0/iptv_vid43.jpg">
+<meta property="article:published_time" content="2020-11-01T12:05:11.000Z">
+<meta property="article:modified_time" content="2020-11-02T14:59:54.847Z">
+<meta property="article:author" content="l1b0k">
+<meta property="article:tag" content="net">
+<meta property="article:tag" content="iptv">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://l1b0k.github.com/posts/775fdec0/topology.jpg">
+
+<link rel="canonical" href="http://l1b0k.github.com/posts/775fdec0.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>浙江电信 IPTV 单线复用之后台配置分析 | l1b0k</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-116455624-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-116455624-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="l1b0k" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">l1b0k</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://l1b0k.github.com/posts/775fdec0.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="l1b0k">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="l1b0k">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          浙江电信 IPTV 单线复用之后台配置分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-01 20:05:11" itemprop="dateCreated datePublished" datetime="2020-11-01T20:05:11+08:00">2020-11-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-11-02 22:59:54" itemprop="dateModified" datetime="2020-11-02T22:59:54+08:00">2020-11-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/home-network/" itemprop="url" rel="index"><span itemprop="name">home-network</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>接上文 <a href="/posts/8b55cd7.html" title="浙江电信 IPTV 单线复用">浙江电信 IPTV 单线复用</a></p>
+<p>为啥我又开始折腾这个。。。主要看到大佬（土豪)分享的 ubnt 全家桶方案，其中 SSID 绑定 VLAN 这个可以显著提高安全性。<br>出于设备利旧(穷)的考虑，得折腾下<code>RT_AC86U</code>。。。不搞懂原理是配不出来的。。。</p>
+<p>AC86U 用的博通方案，配置各种水土不服。从之前图形配置还是很难理解这个网络怎么打通的。<br>参考大佬资料，固件里面也没有 <code>robocfg</code> 命令，配置 VLAN 需要使用 <code>vlanctl</code> 指令。</p>
+<a id="more"></a>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>之前配置</p>
+<ul>
+<li>internet 无 vlan</li>
+<li>iptv VID=43</li>
+</ul>
+<p>基于之前配置的单线复用模型，整理了下系统内的拓扑</p>
+<img src="/posts/775fdec0/topology.jpg" class="">
+
+<p>主要的命令是</p>
+<ul>
+<li>brctl show</li>
+<li>nvram show</li>
+</ul>
+<p>几个坑的地方</p>
+<ul>
+<li>lan 口和 ethx 为逆序匹配</li>
+<li>找不到 vlan 处理的地方</li>
+</ul>
+<p>通过配置的 <code>VID=43</code> 这个条件进行匹配，总数找到点配置了</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># nvram show | grep switch</span><br><span class="line">switch_stb_x&#x3D;4</span><br><span class="line">switch_wan0prio&#x3D;0</span><br><span class="line">switch_wan0tagid&#x3D;</span><br><span class="line">switch_wan1prio&#x3D;0</span><br><span class="line">switch_wan1tagid&#x3D;43  &lt;--- 配置的 VID</span><br><span class="line">switch_wan2prio&#x3D;0</span><br><span class="line">switch_wan2tagid&#x3D;</span><br><span class="line">switch_wantag&#x3D;manual</span><br></pre></td></tr></table></figure>
+
+<p><code>switch_wan</code> 这段还是比较难理解的，最后是在梅林的源码内找到解释</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">https:&#x2F;&#x2F;github.com&#x2F;MerlinRdev&#x2F;86u-merlin&#x2F;blob&#x2F;9fab6492cdb7ba656bb0bc355a6c03b2539a41bb&#x2F;release&#x2F;src&#x2F;router&#x2F;rc&#x2F;sysdeps&#x2F;init-broadcom.c#L4332-L4339</span><br><span class="line"></span><br><span class="line">wan_vid &#x3D; nvram_get_int(&quot;switch_wan0tagid&quot;) &amp; 0x0fff;</span><br><span class="line">iptv_vid &#x3D; nvram_get_int(&quot;switch_wan1tagid&quot;) &amp; 0x0fff;</span><br><span class="line">voip_vid &#x3D; nvram_get_int(&quot;switch_wan2tagid&quot;) &amp; 0x0fff;</span><br></pre></td></tr></table></figure>
+
+<h3 id="vlan-规则分析"><a href="#vlan-规则分析" class="headerlink" title="vlan 规则分析"></a>vlan 规则分析</h3><p>进一步源码查找，找到了配置 vlan 的地方，也就是<code>vlanctl</code> 调用的地方</p>
+<p><code>vlanctl</code> 也是坑，支持对规则的导出，但是输出到系统日志了。。在web <code>系统记录 - 一般记录文件</code> 里面可以看到，后台在<code>/tmp/syslog.log</code></p>
+<blockquote>
+<p>用法 <code>vlanctl --if eth0 --rx --tags 0 --show-table</code> </p>
+</blockquote>
+<h4 id="处理-wan-流量"><a href="#处理-wan-流量" class="headerlink" title="处理 wan 流量"></a>处理 wan 流量</h4><p>将 <code>eth0</code> 上，无 tag 流量（internet），都桥接到 <code>eth0.v0</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">eval(&quot;vlanctl&quot;, &quot;--mcast&quot;, &quot;--if-create&quot;, &quot;eth0&quot;, &quot;0&quot;); &#x2F;&#x2F; 都允许广播吧</span><br><span class="line"></span><br><span class="line"># vlanctl --if eth0 --rx --tags 0 --set-rxif eth0.v0 --rule-append</span><br><span class="line">Nov  1 19:46:48 kernel: VLAN Rule Table : eth0, Rx, nbrOfTags 0, default DROP  </span><br><span class="line">Nov  1 19:46:48 kernel: --------------------------------------------------------------------------------</span><br><span class="line">Nov  1 19:46:48 kernel: &#x3D;&#x3D;&#x3D;&gt; eth0 (ONT) : RX, 0 tag(s)</span><br><span class="line">Nov  1 19:46:48 kernel: Tag Rule ID : 0</span><br><span class="line">Nov  1 19:46:48 kernel: Rx VLAN Device : eth0.v0</span><br><span class="line">Nov  1 19:46:48 kernel: Filters</span><br><span class="line">Nov  1 19:46:48 kernel: 	VlanDev MacAddr : No</span><br><span class="line">Nov  1 19:46:48 kernel: Commands</span><br><span class="line">Nov  1 19:46:48 kernel: 	00:[NOP, 0x00000000, 0x00000000] </span><br><span class="line">Nov  1 19:46:48 kernel: Rule Type  : Flow</span><br><span class="line">Nov  1 19:46:48 kernel: Hit Count   : 10831935</span><br><span class="line">Nov  1 19:46:48 kernel: --------------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line"># vlanctl --if eth0 --tx --tags 0 --filter-txif eth0.v0 --rule-append</span><br><span class="line">Nov  1 19:56:22 kernel: VLAN Rule Table : eth0, Tx, nbrOfTags 0, default ACCEPT  </span><br><span class="line">Nov  1 19:56:22 kernel: --------------------------------------------------------------------------------</span><br><span class="line">Nov  1 19:56:22 kernel: &#x3D;&#x3D;&#x3D;&gt; eth0 (ONT) : TX, 0 tag(s)</span><br><span class="line">Nov  1 19:56:22 kernel: Tag Rule ID : 0</span><br><span class="line">Nov  1 19:56:22 kernel: Rx VLAN Device : DEFAULT</span><br><span class="line">Nov  1 19:56:22 kernel: Filters</span><br><span class="line">Nov  1 19:56:22 kernel: 	Rx REALIF       : </span><br><span class="line">Nov  1 19:56:22 kernel: 	Tx VLANIF       : eth0.v0</span><br><span class="line">Nov  1 19:56:22 kernel: Commands</span><br><span class="line">Nov  1 19:56:22 kernel: 	00:[NOP, 0x00000000, 0x00000000] </span><br><span class="line">Nov  1 19:56:22 kernel: Rule Type  : Flow</span><br><span class="line">Nov  1 19:56:22 kernel: Hit Count   : 9623580</span><br><span class="line">Nov  1 19:56:22 kernel: --------------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/MerlinRdev/86u-merlin/blob/9fab6492cdb7ba656bb0bc355a6c03b2539a41bb/release/src/router/rc/sysdeps/init-broadcom.c#L5336-L5342">https://github.com/MerlinRdev/86u-merlin/blob/9fab6492cdb7ba656bb0bc355a6c03b2539a41bb/release/src/router/rc/sysdeps/init-broadcom.c#L5336-L5342</a></p>
+</blockquote>
+<h4 id="处理-iptv-流量"><a href="#处理-iptv-流量" class="headerlink" title="处理 iptv 流量"></a>处理 iptv 流量</h4><ul>
+<li>config ethPort1 = IPTV</li>
+<li>Forward packets from wan:eth0 to vlanDev1 (untag)</li>
+</ul>
+<p>从 wan 进来 iptv 流量转发到 <code>eth0.v0</code>，此处没有扒掉 vlan</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># vlanctl --if eth0 --rx --tags 1 -filter-vid 0x2B 0 --set-rxif eth0.v0 --rule-append</span><br><span class="line">Nov  2 21:22:04 kernel: VLAN Rule Table : eth0, Rx, nbrOfTags 1, default DROP</span><br><span class="line">Nov  2 21:22:04 kernel: --------------------------------------------------------------------------------</span><br><span class="line">Nov  2 21:22:04 kernel: &#x3D;&#x3D;&#x3D;&gt; eth0 (ONT) : RX, 1 tag(s)</span><br><span class="line">Nov  2 21:22:04 kernel: Tag Rule ID : 0</span><br><span class="line">Nov  2 21:22:04 kernel: Rx VLAN Device : eth0.v0</span><br><span class="line">Nov  2 21:22:04 kernel: Filters</span><br><span class="line">Nov  2 21:22:04 kernel: 	VlanDev MacAddr : No</span><br><span class="line">Nov  2 21:22:04 kernel: 	VLAN Tag 0      : pbits -, cfi -, vid 43, (tci 0x0FFF&#x2F;0x002B), ether -</span><br><span class="line">Nov  2 21:22:04 kernel: Commands</span><br><span class="line">Nov  2 21:22:04 kernel: 	00:[NOP, 0x00000000, 0x00000000]</span><br><span class="line">Nov  2 21:22:04 kernel: Rule Type  : Flow</span><br><span class="line">Nov  2 21:22:04 kernel: Hit Count   : 4038665</span><br><span class="line">Nov  2 21:22:04 kernel: --------------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+<p>从 eth1 进来（rx）的流量（iptv 发出方向），自然需要添加 vlan，然后发到 <code>eth1.v0</code> 上</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># vlanctl --if eth1 --rx --tags 0 --push-tag --set-vid 0x2B 0 --set-rxif eth1.v0 --rule-append</span><br><span class="line">Nov  1 19:51:52 kernel: VLAN Rule Table : eth1, Rx, nbrOfTags 0, default DROP  </span><br><span class="line">Nov  1 19:51:52 kernel: --------------------------------------------------------------------------------</span><br><span class="line">Nov  1 19:51:52 kernel: &#x3D;&#x3D;&#x3D;&gt; eth1 (ONT) : RX, 0 tag(s)</span><br><span class="line">Nov  1 19:51:52 kernel: Tag Rule ID : 0</span><br><span class="line">Nov  1 19:51:52 kernel: Rx VLAN Device : eth1.v0</span><br><span class="line">Nov  1 19:51:52 kernel: Filters</span><br><span class="line">Nov  1 19:51:52 kernel: 	VlanDev MacAddr : No</span><br><span class="line">Nov  1 19:51:52 kernel: Commands</span><br><span class="line">Nov  1 19:51:52 kernel: 	00:[PUSH_TAG, 0x00008100, 0x00000001] </span><br><span class="line">Nov  1 19:51:52 kernel: 	01:[SET_VID, 0x0000002B, 0x00000000] &lt;--- 设置 vid 43</span><br><span class="line">Nov  1 19:51:52 kernel: Rule Type  : Flow</span><br><span class="line">Nov  1 19:51:52 kernel: Hit Count   : 2125</span><br><span class="line">Nov  1 19:51:52 kernel: --------------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+<p>从 eth1 出去的流量（进入iptv 方向），就要扒掉 vlan</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># vlanctl --if eth1 --tx --tags 1 --filter-vid 0x2B 0 --filter-txif eth1.v0 --pop-tag --rule-append</span><br><span class="line">Nov  1 20:00:58 kernel: VLAN Rule Table : eth1, Tx, nbrOfTags 1, default ACCEPT  </span><br><span class="line">Nov  1 20:00:58 kernel: --------------------------------------------------------------------------------</span><br><span class="line">Nov  1 20:00:58 kernel: &#x3D;&#x3D;&#x3D;&gt; eth1 (ONT) : TX, 1 tag(s)</span><br><span class="line">Nov  1 20:00:58 kernel: Tag Rule ID : 0</span><br><span class="line">Nov  1 20:00:58 kernel: Rx VLAN Device : DEFAULT</span><br><span class="line">Nov  1 20:00:58 kernel: Filters</span><br><span class="line">Nov  1 20:00:58 kernel: 	Rx REALIF       : </span><br><span class="line">Nov  1 20:00:58 kernel: 	Tx VLANIF       : eth1.v0</span><br><span class="line">Nov  1 20:00:58 kernel: 	VLAN Tag 0      : pbits -, cfi -, vid 43, (tci 0x0FFF&#x2F;0x002B), ether -</span><br><span class="line">Nov  1 20:00:58 kernel: Commands</span><br><span class="line">Nov  1 20:00:58 kernel: 	00:[POP_TAG, 0x00000000, 0x00000000] </span><br><span class="line">Nov  1 20:00:58 kernel: Rule Type  : Flow</span><br><span class="line">Nov  1 20:00:58 kernel: Hit Count   : 4038604</span><br><span class="line">Nov  1 20:00:58 kernel: --------------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/MerlinRdev/86u-merlin/blob/9fab6492cdb7ba656bb0bc355a6c03b2539a41bb/release/src/router/rc/sysdeps/init-broadcom.c#L5546-L5566">https://github.com/MerlinRdev/86u-merlin/blob/9fab6492cdb7ba656bb0bc355a6c03b2539a41bb/release/src/router/rc/sysdeps/init-broadcom.c#L5546-L5566</a></p>
+</blockquote>
+<p>另外，<code>eth0.v0</code>、<code>eth1.v0</code> 都挂在 <code>br1</code> 下面，自然就通</p>
+<h2 id="抓包观察"><a href="#抓包观察" class="headerlink" title="抓包观察"></a>抓包观察</h2><p>在路由的 wan 口接了个交换机，mirror 流量后抓包</p>
+<img src="/posts/775fdec0/pppoe.jpg" class="">
+
+<img src="/posts/775fdec0/iptv_vid43.jpg" class="">
+
+<h2 id="遗留问题"><a href="#遗留问题" class="headerlink" title="遗留问题"></a>遗留问题</h2><ul>
+<li>未分析internet和iptv 同时配置 vlan 为什么不行</li>
+<li>不清楚 br1 收到 internet 流量后怎么和 br0 建立 nat 关系的</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="http://chunchaichang.blogspot.com/2016/06/vlanctl-command-for-broadcom.html">http://chunchaichang.blogspot.com/2016/06/vlanctl-command-for-broadcom.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://wu.renjie.im/blog/network/ax88u-vlan/zh-cn/">https://wu.renjie.im/blog/network/ax88u-vlan/zh-cn/</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/u128393/p/11629970.html">https://www.cnblogs.com/u128393/p/11629970.html</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>l1b0k
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://l1b0k.github.com/posts/775fdec0.html" title="浙江电信 IPTV 单线复用之后台配置分析">http://l1b0k.github.com/posts/775fdec0.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/net/" rel="tag"># net</a>
+              <a href="/tags/iptv/" rel="tag"># iptv</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/8b55cd7.html" rel="prev" title="浙江电信 IPTV 单线复用">
+      <i class="fa fa-chevron-left"></i> 浙江电信 IPTV 单线复用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#vlan-%E8%A7%84%E5%88%99%E5%88%86%E6%9E%90"><span class="nav-number">2.1.</span> <span class="nav-text">vlan 规则分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%84%E7%90%86-wan-%E6%B5%81%E9%87%8F"><span class="nav-number">2.1.1.</span> <span class="nav-text">处理 wan 流量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%84%E7%90%86-iptv-%E6%B5%81%E9%87%8F"><span class="nav-number">2.1.2.</span> <span class="nav-text">处理 iptv 流量</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%93%E5%8C%85%E8%A7%82%E5%AF%9F"><span class="nav-number">3.</span> <span class="nav-text">抓包观察</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%81%97%E7%95%99%E9%97%AE%E9%A2%98"><span class="nav-number">4.</span> <span class="nav-text">遗留问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">l1b0k</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/l1b0k" title="GitHub → https://github.com/l1b0k" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">l1b0k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">46k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">42 分钟</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '89bfcf7ea71beb26b29a',
+      clientSecret: 'f4fdb5abb09e5f35e04ea6d258f3d70b5c2268c7',
+      repo        : 'l1b0k.github.io',
+      owner       : 'l1b0k',
+      admin       : ['l1b0k'],
+      id          : '5c45b0fc016da80da953e04752af8220',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
